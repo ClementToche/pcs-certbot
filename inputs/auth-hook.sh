@@ -21,7 +21,7 @@ if [ -z "$res" ]
 then
 	echo "Error ading TXT record for domain name"
 	echo "Check /tmp/challenge_$CERTBOT_DOMAIN.tmp"
-	return
+	exit 1
 else
 	echo "TXT record added"
 fi
