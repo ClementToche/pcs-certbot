@@ -6,6 +6,12 @@ PCS_TLS_GID=$(getent group tls | cut -d ':' -f 3)
 PCS_CERT_FOLDER="/etc/letsencrypt/"
 
 function init-pcs(){
+    if [ ! -f "env_file" ]
+    then
+        echo "env_file don't exist. Please create one by taking env_file.example as source to fill-in value"
+        exit -1
+    fi
+    
     if [ -z "$PCS_TLS_GID" ]
     then
         echo "TLS group don't exist."
