@@ -62,7 +62,6 @@ function build-nocache(){
 function run(){
     docker run --rm -detach \
 	    --env-file env_file \
-	    --mount type=bind,source=${PWD},target=/mnt/temp/ \
         --mount type=bind,source=${PCS_CERT_FOLDER},target=/etc/letsencrypt/ \
 	    ${NAME}:${VERSION}
 }
@@ -70,7 +69,6 @@ function run(){
 function run_it(){
     docker run --rm -it -detach \
 	    --env-file env_file \
-	    --mount type=bind,source=${PWD},target=/mnt/temp/ \
         --mount type=bind,source=${PCS_CERT_FOLDER},target=/etc/letsencrypt/ \
         --entrypoint "/bin/sh" \
 	    ${NAME}:${VERSION}
