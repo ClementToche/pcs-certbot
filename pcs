@@ -105,6 +105,7 @@ case $1 in
         if [ "$2" == "it" ]
         then
             run_it
+            attach
         else
             run
         fi
