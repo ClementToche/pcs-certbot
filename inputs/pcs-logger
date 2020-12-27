@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# This script will be used later to manage logs in an advanced way. For now it just print the trace.
+echo $2

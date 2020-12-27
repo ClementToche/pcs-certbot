@@ -1,0 +1,117 @@
+#!/bin/bash
+
+NAME=pcs-certbot
+VERSION=1.0.0
+PCS_TLS_GID=$(getent group tls | cut -d ':' -f 3)
+PCS_CERT_FOLDER="/etc/letsencrypt/"
+
+function init-pcs(){
+    if [ -z "$PCS_TLS_GID" ]
+    then
+        echo "TLS group don't exist."
+        while [ -z "${answ}" ]
+        do
+            read -r -p "Create new one ? [y/n]" answ
+        done
+        if [ "${answ}" == "y" ] || [ "${answ}" == "Y" ]
+        then
+            sudo groupadd tls
+        else
+            echo "Can't continue. Abort !"
+            exit -1
+        fi
+    fi
+
+    if [ ! -d "${PCS_CERT_FOLDER}" ]
+    then
+        echo "${PCS_CERT_FOLDER} folder don't exist"
+        while [ -z "${answ}" ]
+        do
+            read -r -p "Create it ? [y/n]" answ
+        done
+        if [ "${answ}" == "y" ] || [ "${answ}" == "Y" ]
+        then
+            sudo mkdir ${PCS_CERT_FOLDER}
+            sudo chown root:tls ${PCS_CERT_FOLDER}
+        else
+            echo "Can't continue. Abort !"
+            exit -1
+        fi
+    fi
+}
+
+function build() {
+
+	docker build -t ${NAME}:${VERSION} --rm \
+        --build-arg PCS_TLS_GID=$(getent group tls | cut -d ':' -f 3) \
+        .
+}
+
+function build-nocache(){
+	docker build -t ${NAME}:${VERSION} --no-cache --rm \
+        --build-arg PCS_TLS_GID=$(getent group tls | cut -d ':' -f 3) \
+        .
+}
+
+function run(){
+    docker run --rm -detach \
+	    --env-file env_file \
+	    --mount type=bind,source=${PWD},target=/mnt/temp/ \
+        --mount type=bind,source=${PCS_CERT_FOLDER},target=/etc/letsencrypt/ \
+	    ${NAME}:${VERSION}
+}
+
+function run_it(){
+    docker run --rm -it -detach \
+	    --env-file env_file \
+	    --mount type=bind,source=${PWD},target=/mnt/temp/ \
+        --mount type=bind,source=${PCS_CERT_FOLDER},target=/etc/letsencrypt/ \
+        --entrypoint "/bin/sh" \
+	    ${NAME}:${VERSION}
+}
+
+function stop(){
+    docker stop $(docker container ls | grep "${NAME}" | tr -s " " | cut -d ' ' -f1)
+}
+
+function attach()
+{
+    docker attach $(docker container ls | grep "${NAME}" | tr -s " " | cut -d ' ' -f1)
+}
+
+function release()
+{
+    git-tag-version: release
+	git tag -a v${VERSION} -m "v${VERSION}"
+	git push origin v${VERSION}
+}
+
+init-pcs
+
+case $1 in
+    "build")
+        if [ "$2" == "force" ]
+        then
+            build-nocache
+        else
+            build
+        fi
+        ;;
+    "run")
+        if [ "$2" == "it" ]
+        then
+            run_it
+        else
+            run
+        fi
+        ;;
+    "stop")
+        stop
+        ;;
+    "attach")
+        attach
+        ;;
+    *)
+        echo Command $1 not found !
+        ;;
+esac
